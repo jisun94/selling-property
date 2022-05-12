@@ -20,11 +20,11 @@ function Explore() {
             />
             <p className="explore-category-text">Places for rent</p>
           </Link>
-          <Link to="/category/sell">
+          <Link to="/category/sale">
             <img
               className="explore-category-img"
               src={sellCategoryImage}
-              alt="rent"
+              alt="sell"
             />
             <p className="explore-category-text">Places for sale</p>
           </Link>
