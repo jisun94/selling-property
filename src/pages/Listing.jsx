@@ -5,7 +5,6 @@ import { getAuth } from "firebase/auth";
 import { db } from "../firebase.config";
 import Spinner from "../components/Spinner";
 import shareIcon from "../assets/svg/shareIcon.svg";
-import { async } from "@firebase/util";
 
 function Listing() {
   const [listing, setListing] = useState(null);
@@ -97,7 +96,7 @@ function Listing() {
             to={`/contact/${listing.userRef}?listingName=${listing.name}`}
             className="primary-button"
           >
-            Contact Landload
+            Contact Landlord
           </Link>
         )}
       </div>
