@@ -31,7 +31,78 @@ function Listing() {
     fetchListing();
   }, [navigate, params.listingId]);
 
-  return <div>Listing</div>;
+  if (loading) {
+    return <Spinner />;
+  }
+
+  return (
+    <main>
+      {/*slider  */}
+      <div
+        className="share-icon-div"
+        onClick={() => {
+          navigator.clipboard.writeText(window.location.href);
+          setSharedLinkCopied(true);
+          setTimeout(() => {
+            setSharedLinkCopied(false);
+          }, 2000);
+        }}
+      >
+        <img src={shareIcon} alt="" />
+      </div>
+      {sharedLinkCopied && <p className="link-Copied">Link Copied!</p>}
+
+      <div className="listing-details">
+        <p className="listing-name">
+          {listing.name} - ${" "}
+          {listing.offer
+            ? listing.discountedPrice
+                .toString()
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+            : listing.regularPrice
+                .toString()
+                .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
+        </p>
+        <p className="listing-location">{listing.location}</p>
+        <p className="listing-type">
+          For {listing.type === "rent" ? "Rent" : "Sale"}
+        </p>
+        {listing.offer && (
+          <p className="discount-price">
+            ${listing.regularPrice - listing.discountedPrice}discount
+          </p>
+        )}
+
+        <ul className="listing-details-list">
+          <li>
+            {listing.bedrooms > 1
+              ? `${listing.bedrooms} Bedrooms`
+              : "1 Bedroom"}
+          </li>
+          <li>
+            {listing.bathrooms > 1
+              ? `${listing.bathrooms} Bathrooms`
+              : "1 Bathrooms"}
+          </li>
+          <li>{listing.parking && "Parking Spot"}</li>
+          <li>{listing.purnished && "Furnished"}</li>
+        </ul>
+
+        <p className="listing-location-title">Location</p>
+
+        {/* map */}
+
+        {auth.currentUser?.uid !== listing.userRef && (
+          <Link
+            to={`/contact/${listing.userRef}?listingName=${listing.name}`}
+            className="primary-button"
+          >
+            Contact Landload
+          </Link>
+        )}
+      </div>
+    </main>
+  );
 }
 
 export default Listing;
