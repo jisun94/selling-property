@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import {
   getStorage,
@@ -6,6 +6,7 @@ import {
   uploadBytesResumable,
   getDownloadURL,
 } from "firebase/storage";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase.config";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -65,11 +66,14 @@ function CreateListing() {
     return () => {
       isMounted.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted]);
 
   const onSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
+
     if (discountedPrice >= regularPrice) {
       setLoading(false);
       toast.error("Discounted price needs to be less than regular price");
@@ -82,32 +86,34 @@ function CreateListing() {
       return;
     }
 
-    // let geolocation = {};
-    // let location;
-    // if (geolocationEnabled) {
-    //   const response = await fetch(`
-    //   https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=`);
+    let geolocation = {};
+    let location;
 
-    //   const data = await response.json();
+    if (geolocationEnabled) {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${address}&key=`
+      );
 
-    //   geolocation.lat = data.results[0]?.getometry.location.lat ?? 0;
-    //   geolocation.lng = data.results[0]?.getometry.location.lng ?? 0;
+      const data = await response.json();
 
-    //   location =
-    //     data.status === "ZERO_RESULT"
-    //       ? undefined
-    //       : data.result[0]?.formatted_address;
+      geolocation.lat = data.results[0]?.geometry.location.lat ?? 0;
+      geolocation.lng = data.results[0]?.geometry.location.lng ?? 0;
 
-    //   if (location === undefined || location.includes("undefined")) {
-    //     setLoading(false);
-    //     toast.error("Please enter a correct address");
-    //     return;
-    //   }
-    // } else {
-    //   geolocation.lat = latitude;
-    //   geolocation.lng = longitude;
-    //   location = address;
-    // }
+      location =
+        data.status === "ZERO_RESULTS"
+          ? undefined
+          : data.results[0]?.formatted_address;
+
+      if (location === undefined || location.includes("undefined")) {
+        setLoading(false);
+        toast.error("Please enter a correct address");
+        return;
+      }
+    } else {
+      geolocation.lat = latitude;
+      geolocation.lng = longitude;
+      location = address;
+    }
 
     // Store image in firebase
     const storeImage = async (image) => {
@@ -152,16 +158,31 @@ function CreateListing() {
       [...images].map((image) => storeImage(image))
     ).catch(() => {
       setLoading(false);
-      toast.error("Images are not uploaded");
+      toast.error("Images not uploaded");
       return;
     });
-    console.log(imgUrls);
 
+    const formDataCopy = {
+      ...formData,
+      imgUrls,
+      geolocation,
+      timestamp: serverTimestamp(),
+    };
+
+    delete formDataCopy.images;
+    delete formDataCopy.address;
+    location && (formDataCopy.location = location);
+    !formDataCopy.offer && delete formDataCopy.discountedPrice;
+
+    const docRef = await addDoc(collection(db, "listings"), formDataCopy);
     setLoading(false);
+    toast.success("Listing saved");
+    navigate(`/category/${formDataCopy.type}/${docRef.id}`);
   };
 
   const onMutate = (e) => {
     let boolean = null;
+
     if (e.target.value === "true") {
       boolean = true;
     }
@@ -169,7 +190,7 @@ function CreateListing() {
       boolean = false;
     }
 
-    //Files
+    // Files
     if (e.target.files) {
       setFormData((prevState) => ({
         ...prevState,
@@ -177,7 +198,7 @@ function CreateListing() {
       }));
     }
 
-    //Text , Booleans , Numbers
+    // Text/Booleans/Numbers
     if (!e.target.files) {
       setFormData((prevState) => ({
         ...prevState,
