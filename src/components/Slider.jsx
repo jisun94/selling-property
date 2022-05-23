@@ -10,7 +10,6 @@ import "swiper/css/pagination";
 import "swiper/css/scrollbar";
 import "swiper/css/a11y";
 import Spinner from "./Spinner";
-import { async } from "@firebase/util";
 
 function Slider() {
   const [loading, setLoading] = useState(true);
@@ -39,6 +38,10 @@ function Slider() {
   if (loading) {
     return <Spinner />;
   }
+
+  if (listings.length === 0) {
+    return <></>;
+  }
   return (
     listings && (
       <>
@@ -47,9 +50,6 @@ function Slider() {
           modules={[Navigation, Pagination, Scrollbar, A11y]}
           slidesPerView={1}
           pagination={{ clickable: true }}
-          style={{
-            height: "300px",
-          }}
         >
           {listings.map(({ data, id }) => (
             <SwiperSlide
